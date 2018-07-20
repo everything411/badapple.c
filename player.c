@@ -3,7 +3,7 @@
 #include <unistd.h>
 #define DATAFILE "bad_apple.txt"
 #define MUSICFILE "bad_apple.mp3"
-#define MSTODELAY 30000
+#define USTODELAY 30000
 #define BUFLEN 10000
 #define CHARPERLINE 161
 #define LINEPERFRAME 61
@@ -27,6 +27,6 @@ int main(void) {
 		}
       printf("[H%s", buffer);
       buffer[0] = 0;
-      usleep(MSTODELAY);
+      usleep(USTODELAY);
 	}
 }
