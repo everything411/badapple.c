@@ -3,13 +3,14 @@
 .model flat, stdcall
 option casemap :none
 include windows.inc
+include masm32.inc
 include kernel32.inc
 includelib kernel32.lib
+includelib masm32.lib
 .const
 TextName db 'bad_apple.txt',0
 .data?
 hINSTANCE HINSTANCE ?
-hOutPut HANDLE ?
 File_Not_End dd ?
 buffer db 10000 dup(?)
 .CODE
@@ -19,16 +20,14 @@ START:
 	.if hINSTANCE==INVALID_HANDLE_VALUE
 		invoke ExitProcess,1
 	.endif
-	invoke GetStdHandle,STD_OUTPUT_HANDLE
-	mov hOutPut,eax
 	.while 1
 		invoke ReadFile,hINSTANCE,addr buffer,9662,addr File_Not_End,NULL
 		.if !File_Not_End
 			invoke CloseHandle,hINSTANCE
-			invoke CloseHandle,hOutPut
 			invoke ExitProcess,0
 		.endif
-		invoke WriteFile,hOutPut,addr buffer,9662,addr File_Not_End,NULL
+		invoke locate,0,0
+		invoke StdOut,addr buffer
 		invoke Sleep,30
 	.endw
 	
