@@ -5,9 +5,10 @@
 #include <windows.h>
 #include <assert.h>
 #include "zlib.h"
+#define TIMESTAMP(t) (long long)((t).QuadPart)
 #define FRAME_COUNT 5479
-#define FRAME_TIME 40
-#define frame_time(x) ((x + 1) * FRAME_TIME)
+#define TIME_PRE_PRAME 40
+#define FRAME_TIME(x, freq) (((x) + 1) * TIME_PRE_PRAME * ((freq) / 1000))
 #define CHUNK 16384
 unsigned long long frame[5500][142][5];
 void GotoXY(int x, int y)
@@ -91,6 +92,7 @@ void output_frame(int i)
     }
     puts(frame_buf);
 }
+
 int main(void)
 {
     FILE *fp = fopen("deflate.dat", "rb");
@@ -104,20 +106,42 @@ int main(void)
     {
         return zlibret;
     }
+    LARGE_INTEGER qpc;
+    long long freq = 0;
+    if(!QueryPerformanceFrequency(&qpc))
+    {
+         printf("QueryPerformanceFrequency fail!\n");
+         return 0;
+    }
+    else
+    {
+        freq = TIMESTAMP(qpc);
+    }
     WinExec("mpg123.exe -q bad_apple.mp3", SW_HIDE);
-    clock_t start, end;
-    clock_t print_start, print_end;
-    start = clock();
+
+    long long start, end;
+    long long print_start, print_end;
+    QueryPerformanceCounter(&qpc);
+    start = TIMESTAMP(qpc);
     for (int i = 0; i < FRAME_COUNT; i++)
     {
+        QueryPerformanceCounter(&qpc);
+        print_start = TIMESTAMP(qpc);
         GotoXY(0, 0);
-        print_start = clock();
         output_frame(i);
-        print_end = clock();
-        while ((end = clock()) - start < frame_time(i))
-            ;
-        printf("frame%04d at %06d, offset %2d. frame -> time %2d, print time %2d\n",
-               i, end - start, end - start - frame_time(i), end - print_start, print_end - print_start);
+        QueryPerformanceCounter(&qpc);
+        print_end = TIMESTAMP(qpc);
+        while (1)
+        {
+            QueryPerformanceCounter(&qpc);
+            end = TIMESTAMP(qpc);
+            if(end - start < FRAME_TIME(i, freq))
+                Sleep(1);
+            else
+                break;
+        }
+        printf("frame%04d, tick per-second %lld, tick %010lld, frame tick %08lld, print tick %08lld\n",
+               i, freq, end - start, end - print_start, print_end - print_start);
     }
     return 0;
 }
